@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "930055685859",
+    "project_id": "car-pool-786eb",
+    "storage_bucket": "car-pool-786eb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:930055685859:android:cc17a002447b40c2f4a7d6",
+        "android_client_info": {
+          "package_name": "com.example.car_pool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3gOJDyIviVzsjmfqOR66CzIjiVn8U2z8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:930055685859:android:f62bc5cd56560873f4a7d6",
+        "android_client_info": {
+          "package_name": "com.company.carPool"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3gOJDyIviVzsjmfqOR66CzIjiVn8U2z8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
