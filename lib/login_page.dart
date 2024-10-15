@@ -38,19 +38,31 @@ class _LoginPageState extends State<LoginPage> {
 
     if (_formKey.currentState!.validate()) {
       try {
-        appState.signIn(_emailController.text.trim(), _passwordController.text);
+        print('entering signin 41 loginPage');
+        await appState.signIn(_emailController.text.trim(), _passwordController.text);
+        print('signin completed 43 loginPage');
+
+        if(appState.idToken == null) {
+          throw Exception('ID token is null after sign in 46 loginPage');
+        }
 
         String idToken = appState.idToken!;
         String userId = _emailController.text.trim();
         Map<String, dynamic> userInfo = await fetchUserInfo(idToken, userId);
 
+        print('fetched user info 49 login page');
+
         String userRole = userInfo['role'];
+        print(userRole);
         if (userRole == _selectedRole) {
           appState.updateUserRole(userRole);
 
           appState.initializeVehicle([_emailController.text.trim()]);
 
+          print('initialized vehicles 54 loginPage');
+
           if (!mounted) return;
+          print(userRole);
           if (userRole == 'driver') {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (context) => DriverHomepage()));
