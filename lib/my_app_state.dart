@@ -2,7 +2,6 @@
 
 import 'package:car_pool/booking.dart';
 import 'package:car_pool/handle_user_info.dart';
-import 'package:car_pool/login_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -341,8 +340,7 @@ class MyHomePage extends StatelessWidget {
           IconButton(
             onPressed: () async {
               appState.signOut();
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => LoginPage()));
+              Navigator.pushReplacementNamed(context, '/login');
             },
             icon: Icon(Icons.logout),
           )

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:car_pool/login_page.dart';
 import 'package:car_pool/my_app_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -115,8 +114,7 @@ class _DriverHomepageState extends State<DriverHomePage> {
           IconButton(
             onPressed: () async {
               appState.signOut();
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => LoginPage()));
+              Navigator.pushReplacementNamed(context, '/login');
             },
             icon: Icon(Icons.logout),
           )

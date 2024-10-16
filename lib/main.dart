@@ -1,3 +1,6 @@
+import 'package:car_pool/admin_home_page.dart';
+import 'package:car_pool/driver_home_page.dart';
+import 'package:car_pool/sign_up_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +32,18 @@ class MyApp extends StatelessWidget {
           colorScheme:
               ColorScheme.fromSeed(seedColor: Color.fromRGBO(25, 25, 25, 1)),
         ),
-        home: AuthWrapper(), // Wrapper to handle authenticated state
+        initialRoute: '/',
+        routes: {
+          '/': (context) => AuthWrapper(),
+          '/login': (context) => LoginPage(),
+          '/home': (context) => MyHomePage(),
+          '/driver_home': (context) => DriverHomePage(),
+          '/admin_home': (context) => AdminHomePage(),
+          '/signup': (context) => SignUpPage(),
+        },
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(builder: (context) => MyHomePage());
+        },
       ),
     );
   }
@@ -43,7 +57,14 @@ class AuthWrapper extends StatelessWidget {
 
     // Check if the user is logged in and navigate accordingly
     if (appState.isLoggedIn) {
-      return MyHomePage();
+      switch (appState.userRole) {
+        case 'driver':
+          return DriverHomePage();
+        case 'admin':
+          return AdminHomePage();
+        default:
+          return MyHomePage();
+      }
     } else {
       return LoginPage();
     }
