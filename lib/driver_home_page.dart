@@ -53,6 +53,8 @@ class _DriverHomepageState extends State<DriverHomePage> {
       _isTripActive = false;
     });
 
+    print(_tripData);
+
     _positionStreamSubscription?.cancel();
 
     final url =
@@ -74,7 +76,10 @@ class _DriverHomepageState extends State<DriverHomePage> {
                   'fields': {
                     'latitude': {'doubleValue': tripPoint['latitude']},
                     'longitude': {'doubleValue': tripPoint['longitude']},
-                    'timeStamp': {'stringValue': tripPoint['timeStamp']}
+                    'timeStamp': {
+                      'timestampValue':
+                          _convertToFirestoreTimestamp((tripPoint['timeStamp']))
+                    },
                   }
                 }
               };
@@ -82,9 +87,11 @@ class _DriverHomepageState extends State<DriverHomePage> {
           }
         },
         'startTime': {
-          'timeStampValue': _tripData.first['timeStamp'],
+          'timestampValue': _convertToFirestoreTimestamp(_tripData.first['timeStamp']),
         },
-        'endTime': DateTime.now().toIso8601String(),
+        'endTime': {
+          'timestampValue': _convertToFirestoreTimestamp(DateTime.now().toIso8601String()),
+        }
       }
     });
 
@@ -101,6 +108,11 @@ class _DriverHomepageState extends State<DriverHomePage> {
     } catch (e) {
       print(('error during trip saving $e'));
     }
+  }
+
+  String _convertToFirestoreTimestamp(String dateTime) {
+    DateTime parsedDate = DateTime.parse(dateTime).toUtc();
+    return parsedDate.toIso8601String();
   }
 
   @override
