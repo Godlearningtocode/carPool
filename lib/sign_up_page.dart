@@ -76,7 +76,7 @@ class _SignUpPageState extends State<SignUpPage> {
         context,
         MaterialPageRoute(
             builder: (context) =>
-                appState.role == 'driver' ? DriverHomepage() : MyHomePage()),
+                appState.role == 'driver' ? DriverHomePage() : MyHomePage()),
       );
     } catch (e) {
       // Update the error message in the UI
