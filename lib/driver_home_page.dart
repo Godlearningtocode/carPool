@@ -4,6 +4,7 @@ import 'package:car_pool/my_app_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'location_service.dart';
 import 'package:provider/provider.dart';
 
 class DriverHomePage extends StatefulWidget {
@@ -46,6 +47,8 @@ class _DriverHomepageState extends State<DriverHomePage> {
     });
 
     _positionStreamSubscription = positionStreamSubscription;
+
+        await LocationService.startLocationTracking();
   }
 
   Future<void> _endTrip(String? idToken) async {
@@ -108,6 +111,8 @@ class _DriverHomepageState extends State<DriverHomePage> {
     } catch (e) {
       print(('error during trip saving $e'));
     }
+
+    LocationService.stopLocationTracking();
   }
 
   String _convertToFirestoreTimestamp(String dateTime) {
