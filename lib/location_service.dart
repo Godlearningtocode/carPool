@@ -2,13 +2,15 @@ import 'dart:async';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 
-
 class LocationService {
   static StreamSubscription<Position>? _positionSubscription;
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
-  static Future<void> startLocationTracking() async {
-    const androidSettings = AndroidInitializationSettings('app_icon'); // Make sure you have 'app_icon.png' in `res/drawable`
+  static Future<void> startLocationTracking(
+      {required Function(Position) onPositionUpdate}) async {
+    const androidSettings = AndroidInitializationSettings(
+        'app_icon'); // Ensure 'app_icon.png' is in `res/drawable`
 
     const initializationSettings = InitializationSettings(
       android: androidSettings,
@@ -43,9 +45,10 @@ class LocationService {
       distanceFilter: 10,
     );
 
-    _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position position) {
-      // Save position data to the database or log it
-      print("Lat: ${position.latitude}, Lng: ${position.longitude}");
+    _positionSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position position) {
+      onPositionUpdate(position);
     });
   }
 

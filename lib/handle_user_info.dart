@@ -65,7 +65,7 @@ Future<Map<String, dynamic>> fetchUserInfo(
 
       final userInfo = {
         'email': data['fields']?['email']?['stringValue'] ?? '',
-        'firstname': data['fields']?['firstName']?['stringValue'] ?? '',
+        'firstName': data['fields']?['firstName']?['stringValue'] ?? '',
         'lastName': data['fields']?['lastName']?['stringValue'] ?? '',
         'phoneNumber': data['fields']?['phoneNumber']?['stringValue'] ?? '',
         'address': data['fields']?['address']?['stringValue'] ?? '',

@@ -16,15 +16,32 @@ class _DriverHomepageState extends State<DriverHomePage> {
   bool _isTripActive = false;
   List<Map<String, dynamic>> _tripData = [];
   StreamSubscription<Position>? _positionStreamSubscription;
+  String? _tripId;
 
   @override
   void initState() {
     super.initState();
   }
 
-  Future<void> _startTrip() async {
+  Future<void> _startTrip(String driverName) async {
     setState(() {
       _isTripActive = true;
+    });
+
+    _tripId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    await LocationService.startLocationTracking(
+        onPositionUpdate: (Position position) {
+      if (_isTripActive) {
+        _tripData.add({
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'timeStamp': DateTime.now().toIso8601String(),
+        });
+
+        // Update Firestore with the new position
+        _updateTripLocation(driverName);
+      }
     });
 
     LocationSettings locationSettings = LocationSettings(
@@ -32,7 +49,7 @@ class _DriverHomepageState extends State<DriverHomePage> {
       distanceFilter: 5,
     );
 
-    StreamSubscription<Position> positionStreamSubscription =
+    _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position position) {
       if (_isTripActive) {
@@ -42,26 +59,23 @@ class _DriverHomepageState extends State<DriverHomePage> {
           'timeStamp': DateTime.now().toIso8601String(),
         });
 
-        setState(() {});
+        setState(() {}); // Update UI
       }
     });
-
-    _positionStreamSubscription = positionStreamSubscription;
-
-        await LocationService.startLocationTracking();
   }
 
-  Future<void> _endTrip(String? idToken) async {
+  Future<void> _endTrip(String? idToken, String driverName) async {
     setState(() {
       _isTripActive = false;
     });
 
-    print(_tripData);
-
     _positionStreamSubscription?.cancel();
 
+    final tripId = DateTime.now()
+        .millisecondsSinceEpoch
+        .toString(); // Use timestamp as trip ID
     final url =
-        'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip';
+        'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip/${driverName}/trips?documentId=${tripId}';
 
     final headers = {
       'Authorization': 'Bearer $idToken',
@@ -70,7 +84,7 @@ class _DriverHomepageState extends State<DriverHomePage> {
 
     final body = jsonEncode({
       'fields': {
-        'driver': {'stringValue': 'Driver name'},
+        'driver': {'stringValue': driverName},
         'tripData': {
           'arrayValue': {
             'values': _tripData.map((tripPoint) {
@@ -90,10 +104,12 @@ class _DriverHomepageState extends State<DriverHomePage> {
           }
         },
         'startTime': {
-          'timestampValue': _convertToFirestoreTimestamp(_tripData.first['timeStamp']),
+          'timestampValue':
+              _convertToFirestoreTimestamp(_tripData.first['timeStamp']),
         },
         'endTime': {
-          'timestampValue': _convertToFirestoreTimestamp(DateTime.now().toIso8601String()),
+          'timestampValue':
+              _convertToFirestoreTimestamp(DateTime.now().toIso8601String()),
         }
       }
     });
@@ -113,6 +129,61 @@ class _DriverHomepageState extends State<DriverHomePage> {
     }
 
     LocationService.stopLocationTracking();
+  }
+
+  Future<void> _updateTripLocation(String driverName) async {
+    final idToken = Provider.of<MyAppState>(context, listen: false).idToken;
+    if (_tripData.isEmpty) return; // Ensure there are data points
+
+    // Get the most recent trip point (i.e., the last one in the list)
+    Map<String, dynamic> lastTripPoint = _tripData.last;
+
+    final url =
+        'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip/$driverName/trips/$_tripId';
+
+    final headers = {
+      'Authorization': 'Bearer $idToken',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      'fields': {
+        'driver': {
+          'stringValue': 'Driver name'
+        }, // You can modify this to use the actual driver's name.
+        'tripData': {
+          'arrayValue': {
+            'values': [
+              {
+                'mapValue': {
+                  'fields': {
+                    'latitude': {'doubleValue': lastTripPoint['latitude']},
+                    'longitude': {'doubleValue': lastTripPoint['longitude']},
+                    'timeStamp': {
+                      'timestampValue': _convertToFirestoreTimestamp(
+                          lastTripPoint['timeStamp'])
+                    },
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    });
+
+    try {
+      final response =
+          await http.patch(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        print('Updated last trip data point successfully.');
+      } else {
+        print('Error updating trip location: ${response.body}');
+      }
+    } catch (e) {
+      print('Error during trip location update: $e');
+    }
   }
 
   String _convertToFirestoreTimestamp(String dateTime) {
@@ -144,13 +215,16 @@ class _DriverHomepageState extends State<DriverHomePage> {
             if (!_isTripActive)
               ElevatedButton(
                   onPressed: () async {
-                    await _startTrip();
+                    String driverName = appState.driverName ?? 'unknwon driver';
+                    print('219 driver home page $driverName ${appState.driverName}');
+                    await _startTrip(driverName);
                   },
                   child: Text('Start Trip')),
             if (_isTripActive)
               ElevatedButton(
                 onPressed: () async {
-                  await _endTrip(appState.idToken);
+                  String driverName = appState.driverName ?? 'unknown';
+                  await _endTrip(appState.idToken, driverName);
                 },
                 child: Text('end trip'),
               ),

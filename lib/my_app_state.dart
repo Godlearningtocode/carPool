@@ -20,6 +20,7 @@ class MyAppState extends ChangeNotifier {
   String? _address;
   String? _userRole;
   String? _role;
+  String? _driverName;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _user;
@@ -31,6 +32,7 @@ class MyAppState extends ChangeNotifier {
   String? get lastName => _lastName;
   String? get userRole => _userRole;
   String? get role => _role;
+  String? get driverName => _driverName;
 
   Future<void> updateUserRoleToDriver(String email, String idToken) async {
     final url =
@@ -72,6 +74,13 @@ class MyAppState extends ChangeNotifier {
         await http.patch(Uri.parse(url), headers: headers, body: body);
     if (response.statusCode != 200) {
       throw Exception('Failed to promote to admin');
+    }
+  }
+
+  void setDriverName(String name) {
+    if (_userRole == 'driver') {
+      _driverName = name;
+      notifyListeners();
     }
   }
 
@@ -191,6 +200,12 @@ class MyAppState extends ChangeNotifier {
         _firstName = userInfo['firstName'];
         _lastName = userInfo['lastName'];
         _role = userInfo['role'];
+
+        if (_role == 'driver') {
+          _driverName = '$_firstName $_lastName';
+        }
+
+        print('$_driverName $_firstName $_lastName');
 
         notifyListeners();
       } else {
