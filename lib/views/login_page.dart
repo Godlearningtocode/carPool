@@ -1,11 +1,11 @@
-import 'package:car_pool/views/admin_home_page.dart';
-import 'package:car_pool/handle_user_info.dart';
-import 'package:car_pool/providers/my_app_state.dart';
-import 'package:car_pool/views/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/my_app_state.dart';
+import '../services/user_service.dart';
+import 'admin_home_page.dart';
+import 'driver_home_page.dart';
+import 'home_page.dart';
 import 'sign_up_page.dart';
-import 'driver_home_page.dart'; // Import driver home page
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,19 +13,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers for email and password input
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   String? _selectedRole = 'user';
-
-  // Variable to store error message
   String? _errorMessage;
 
-  // Lifecycle method to dispose of controllers
   @override
   void dispose() {
     _emailController.dispose();
@@ -33,54 +26,29 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // Helper method to handle login
   Future<void> _login() async {
     var appState = Provider.of<MyAppState>(context, listen: false);
 
     if (_formKey.currentState!.validate()) {
       try {
-        print('entering signin 41 loginPage');
-        await appState.signIn(
-            _emailController.text.trim(), _passwordController.text);
-        print('signin completed 43 loginPage');
+        await appState.signIn(_emailController.text.trim(), _passwordController.text);
 
-        if (appState.idToken == null) {
-          throw Exception('ID token is null after sign in 46 loginPage');
-        }
+         if (appState.idToken == null) {
+        throw Exception('ID token is null after sign in');
+      }
 
-        String idToken = appState.idToken!;
-        String userId = _emailController.text.trim();
-        Map<String, dynamic> userInfo = await fetchUserInfo(idToken, userId);
+        final idToken = appState.idToken!;
+        final userId = _emailController.text.trim();
 
-        print('fetched user info 49 login page');
+        Map<String, dynamic> userInfo = await UserService.fetchUserInfo(idToken: idToken, userId: userId);
+        final userRole = userInfo['role'];
 
-        String userRole = userInfo['role'];
-        print(userRole);
         if (userRole == _selectedRole) {
           appState.updateUserRole(userId, userRole);
-
-          appState.initializeVehicle([_emailController.text.trim()]);
-
-          print('initialized vehicles 54 loginPage');
-
-          if (!mounted) return;
-          print(userRole);
-          if (userRole == 'driver') {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => DriverHomePage()));
-          } else if (userRole == 'admin') {
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => AdminHomePage()));
-          } else {
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => MyHomePage()));
-          }
+          appState.initializeVehicle([userId]);
+          _navigateBasedOnRole(userRole);
         } else {
-          setState(() {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(
-                    'Incorrect role selection. Please select the correct role')));
-          });
+          _showErrorSnackbar('Incorrect role selection. Please select the correct role');
           appState.signOut();
         }
       } catch (e) {
@@ -91,6 +59,24 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _navigateBasedOnRole(String userRole) {
+    if (!mounted) return;
+    switch (userRole) {
+      case 'driver':
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DriverHomePage()));
+        break;
+      case 'admin':
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => AdminHomePage()));
+        break;
+      default:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MyHomePage()));
+    }
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Widget _buildDrawer() {
     return Drawer(
       child: ListView(
@@ -98,10 +84,7 @@ class _LoginPageState extends State<LoginPage> {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue),
-            child: Text(
-              'Select Login Type',
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
+            child: Text('Select Login Type', style: TextStyle(color: Colors.white, fontSize: 24)),
           ),
           ListTile(
             leading: Icon(Icons.person),
@@ -132,19 +115,16 @@ class _LoginPageState extends State<LoginPage> {
               });
               Navigator.pop(context);
             },
-          )
+          ),
         ],
       ),
     );
   }
 
-  // Build method to construct the UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Sign In'),
-      ),
+      appBar: AppBar(title: Text('Sign In')),
       drawer: _buildDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -152,14 +132,8 @@ class _LoginPageState extends State<LoginPage> {
           key: _formKey,
           child: Column(
             children: [
-              // Display error message if present
               if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Colors.red),
-                ),
-
-              // Email input field
+                Text(_errorMessage!, style: TextStyle(color: Colors.red)),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(labelText: 'Email'),
@@ -173,8 +147,6 @@ class _LoginPageState extends State<LoginPage> {
                   return null;
                 },
               ),
-
-              // Password input field
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(labelText: 'Password'),
@@ -189,24 +161,16 @@ class _LoginPageState extends State<LoginPage> {
                   return null;
                 },
               ),
-
               SizedBox(height: 20),
-
-              // Sign In button
               ElevatedButton(
                 onPressed: () async {
                   await _login();
                 },
                 child: Text('Log in as $_selectedRole'),
               ),
-
-              // Sign Up button for users without an account
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SignUpPage()),
-                  );
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SignUpPage()));
                 },
                 child: Text('Don\'t have an account? Sign Up'),
               ),

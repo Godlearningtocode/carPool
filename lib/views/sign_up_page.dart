@@ -1,8 +1,5 @@
-// ignore_for_file: use_build_context_synchronously
-
-import 'package:car_pool/providers/my_app_state.dart';
+import 'package:car_pool/services/user_service.dart';  // Import the UserService
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -10,10 +7,9 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  // Form key to validate form inputs
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for the email and password input fields
+  // Controllers for the input fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _firstNameController = TextEditingController();
@@ -22,14 +18,10 @@ class _SignUpPageState extends State<SignUpPage> {
   final _addressController = TextEditingController();
 
   String _selectedRole = 'user';
-
-  // Future to track the state of the sign-up process
-  Future<void>? _futureSignUp;
-
-  // Variable to hold any error messages
   String? _errorMessage;
 
-  // Lifecycle method to dispose resources
+  final UserService _userService = UserService();  // Create an instance of UserService
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -41,44 +33,34 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  // Method to handle the sign-up and sign-in process
-  Future<void> signup(BuildContext context) async {
-    // Access the MyAppState instance from Provider
-    var appState = Provider.of<MyAppState>(context, listen: false);
+  Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     try {
-      print('signing up user 48 signuppage');
-      // Perform sign-up and sign-in actions
-      await appState.signUp(
-        _emailController.text.trim(),
-        _passwordController.text,
-        _firstNameController.text.trim(),
-        _lastNameController.text.trim(),
-        _phoneNumberController.text.trim(),
-        _addressController.text.trim(),
-        _selectedRole,
+      await _userService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        phoneNumber: _phoneNumberController.text.trim(),
+        address: _addressController.text.trim(),
+        role: _selectedRole,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Account created successfully! Please sign in.')),
+        SnackBar(content: Text('Account created successfully! Please sign in.')),
       );
 
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
-      // Update the error message in the UI
       setState(() {
         _errorMessage = e.toString();
       });
-
-      // Show a failure message using a Snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign-Up failed: $e')),
-      );
     }
   }
 
-  // Build method to construct the UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,19 +74,15 @@ class _SignUpPageState extends State<SignUpPage> {
             key: _formKey,
             child: Column(
               children: [
-                // Display error message if available
+                // Display error message
                 if (_errorMessage != null)
-                  Text(
-                    _errorMessage!,
-                    style: TextStyle(color: Colors.red),
-                  ),
+                  Text(_errorMessage!, style: TextStyle(color: Colors.red)),
 
                 // Email input field
                 TextFormField(
                   controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
                   validator: (value) {
-                    // Basic email validation
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
@@ -121,7 +99,6 @@ class _SignUpPageState extends State<SignUpPage> {
                   decoration: InputDecoration(labelText: 'Password'),
                   obscureText: true,
                   validator: (value) {
-                    // Basic password validation
                     if (value == null || value.isEmpty) {
                       return 'Please enter a password';
                     }
@@ -132,89 +109,71 @@ class _SignUpPageState extends State<SignUpPage> {
                   },
                 ),
 
+                // Other input fields (First Name, Last Name, etc.)
                 TextFormField(
                   controller: _firstNameController,
                   decoration: InputDecoration(labelText: 'First Name'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter your first name' : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your first name';
+                    }
+                    return null;
+                  },
                 ),
-
                 TextFormField(
                   controller: _lastNameController,
                   decoration: InputDecoration(labelText: 'Last Name'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter your last name' : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your last name';
+                    }
+                    return null;
+                  },
                 ),
-
                 TextFormField(
                   controller: _phoneNumberController,
                   decoration: InputDecoration(labelText: 'Phone Number'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter your phone number' : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    return null;
+                  },
                 ),
-
                 TextFormField(
                   controller: _addressController,
                   decoration: InputDecoration(labelText: 'Address'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Please enter your address' : null,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your address';
+                    }
+                    return null;
+                  },
                 ),
 
                 SizedBox(height: 20),
 
+                // Dropdown for role selection
                 DropdownButtonFormField(
                   value: _selectedRole,
                   decoration: InputDecoration(labelText: 'Select Role'),
                   items: [
-                    DropdownMenuItem(
-                      value: 'user',
-                      child: Text('User'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'driver',
-                      child: Text('Driver'),
-                    )
+                    DropdownMenuItem(value: 'user', child: Text('User')),
+                    DropdownMenuItem(value: 'driver', child: Text('Driver')),
                   ],
                   onChanged: (value) {
                     setState(() {
                       _selectedRole = value!;
                     });
                   },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select a role';
-                    }
-                    return null;
-                  },
                 ),
 
-                SizedBox(
-                  height: 20,
-                ),
+                SizedBox(height: 20),
 
-                // FutureBuilder to manage the state of the sign-up process
-                FutureBuilder<void>(
-                  future: _futureSignUp,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}',
-                          style: TextStyle(color: Colors.red));
-                    }
-
-                    // Sign-Up button
-                    return ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          setState(() {
-                            _futureSignUp = signup(context);
-                          });
-                        }
-                      },
-                      child: Text('Sign Up'),
-                    );
-                  },
+                // Sign-up button
+                ElevatedButton(
+                  onPressed: _signUp,
+                  child: Text('Sign Up'),
                 ),
               ],
             ),

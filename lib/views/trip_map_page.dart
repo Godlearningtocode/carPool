@@ -1,8 +1,7 @@
-import 'dart:convert';
-
+// trip_map_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
+import 'package:car_pool/services/roads_service.dart';
 
 class TripMapPage extends StatefulWidget {
   final List tripData;
@@ -14,9 +13,11 @@ class TripMapPage extends StatefulWidget {
 }
 
 class _TripMapPageState extends State<TripMapPage> {
+  // ignore: unused_field
   GoogleMapController? _mapController;
   List<LatLng> _tripCoordinates = [];
   List<LatLng> _smoothCoordinates = [];
+  final RoadsService _roadsService = RoadsService();
 
   @override
   void initState() {
@@ -34,36 +35,13 @@ class _TripMapPageState extends State<TripMapPage> {
   Future<void> _drawSmoothPolyline() async {
     if (_tripCoordinates.isEmpty) return;
 
-    String path = _tripCoordinates
-        .map((point) => '${point.latitude}, ${point.longitude}')
-        .join('|');
-
-    const String apiKey = 'AIzaSyDUXyVASgZtmw4g1BYQyDNj0J0s7_3Dyjo';
-
-    String url =
-        "https://roads.googleapis.com/v1/snapToRoads?path=$path&interpolate=true&key=$apiKey";
-
-    try {
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-
-        if (jsonResponse['snappedPoints'] != null) {
-          setState(() {
-            _smoothCoordinates =
-                (jsonResponse['snappedPoints'] as List).map((point) {
-              var location = point['location'];
-              return LatLng(location['latitude'], location['longitude']);
-            }).toList();
-          });
-        }
-      } else {
-        print('Failed to snao roads: ${response.body}');
-      }
-    } catch (e) {
-      print('error calling roads api: $e');
-    }
+    List<LatLng> snappedCoordinates =
+        await _roadsService.snapToRoads(_tripCoordinates);
+    setState(() {
+      _smoothCoordinates = snappedCoordinates.isNotEmpty
+          ? snappedCoordinates
+          : _tripCoordinates;
+    });
   }
 
   Polyline _createPolyline(List<LatLng> points) {
@@ -91,9 +69,8 @@ class _TripMapPageState extends State<TripMapPage> {
                 : LatLng(0, 0),
             zoom: 14.0),
         polylines: {
-          _createPolyline(_smoothCoordinates.isNotEmpty
-              ? _smoothCoordinates
-              : _tripCoordinates),
+          _createPolyline(
+              _smoothCoordinates.isNotEmpty ? _smoothCoordinates : _tripCoordinates),
         },
         markers: _tripCoordinates
             .map((coord) => Marker(
