@@ -1,4 +1,6 @@
-import 'package:car_pool/services/vehicle_manager.dart';
+// ignore_for_file: library_private_types_in_public_api
+
+import 'package:car_pool/services/vehicle_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:car_pool/providers/my_app_state.dart';
@@ -13,8 +15,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final TextEditingController _driverController = TextEditingController();
   bool isLoading = false;
 
-  final VehicleManager _vehicleManager =
-      VehicleManager(); // Use vehicle manager
+  final VehicleService _vehicleService = VehicleService(); // Use VehicleService
 
   @override
   void dispose() {
@@ -29,7 +30,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     });
 
     try {
-      await _vehicleManager.addOrUpdateVehicleStatus(
+      await _vehicleService.addOrUpdateVehicleStatus(
         idToken,
         _registrationController.text.trim(),
         _driverController.text.trim(),
