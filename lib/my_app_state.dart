@@ -205,8 +205,6 @@ class MyAppState extends ChangeNotifier {
           _driverName = '$_firstName $_lastName';
         }
 
-        print('$_driverName $_firstName $_lastName');
-
         notifyListeners();
       } else {
         final errorResponse = jsonDecode(response.body);

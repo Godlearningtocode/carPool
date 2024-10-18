@@ -1,13 +1,15 @@
 import 'package:car_pool/my_app_state.dart';
 import 'package:car_pool/trip_map_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 class DriverTripHistoryPage extends StatelessWidget {
-  Future<List<Map<String, dynamic>>> fetchTripHistory(String idToken) async {
+  Future<Map<String, List<Map<String, dynamic>>>> fetchTripHistory(
+      String idToken) async {
     const url =
         'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip';
     final headers = {
@@ -20,7 +22,9 @@ class DriverTripHistoryPage extends StatelessWidget {
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
 
-      return (jsonResponse['documents'] as List).map((doc) {
+      Map<String, List<Map<String, dynamic>>> groupedTrips = {};
+
+      for (var doc in jsonResponse['documents']) {
         List tripData = (doc['fields']['tripData']['arrayValue']['values']
                 as List)
             .map((point) {
@@ -57,25 +61,24 @@ class DriverTripHistoryPage extends StatelessWidget {
           return dateA?.compareTo(dateB ?? DateTime.now()) ?? 0;
         });
 
-        // Extract the start and end time safely
+        var driverName =
+            doc['fields']['driver']['stringValue'] ?? 'Unknown Driver';
         var startTime =
             doc['fields']['startTime']['timestampValue'] ?? "Unknown";
         var endTime = doc['fields']['endTime']['timestampValue'] ?? "Unknown";
 
-        String formattedStartTime = startTime != "Unknown"
-            ? DateFormat.yMMMd().add_jm().format(DateTime.parse(startTime))
-            : startTime;
-        String formattedEndTime = endTime != "Unknown"
-            ? DateFormat.yMMMd().add_jm().format(DateTime.parse(endTime))
-            : endTime;
+        if (!groupedTrips.containsKey(driverName)) {
+          groupedTrips[driverName] = [];
+        }
 
-        return {
-          'driver': doc['fields']['driver']['stringValue'] ?? "Unknown",
-          'startTime': formattedStartTime,
-          'endTime': formattedEndTime,
+        groupedTrips[driverName]?.add({
+          'startTime': startTime,
+          'endTime': endTime,
           'tripData': tripData,
-        };
-      }).toList();
+        });
+      }
+
+      return groupedTrips;
     } else {
       throw Exception('Failed to fetch trip history ${response.body}');
     }
@@ -98,7 +101,7 @@ class DriverTripHistoryPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('Driver Trip history'),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
         future: fetchTripHistory(appState.idToken!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -110,38 +113,38 @@ class DriverTripHistoryPage extends StatelessWidget {
               child: Text('Error: ${snapshot.error}'),
             );
           } else {
+            final groupedTrips = snapshot.data!;
             return ListView(
-              children: snapshot.data!.map((trip) {
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            TripMapPage(tripData: trip['tripData']),
-                      ),
-                    );
-                  },
-                  child: Card(
-                    elevation: 3,
-                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.map,
-                        color: Colors.blue,
-                      ),
-                      title: Text(
-                        'Driver: ${trip['driver']}',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle:
-                          Text('${trip['startTime']} - ${trip['endTime']}'),
-                      trailing: Icon(Icons.arrow_forward),
-                    ),
+                children: groupedTrips.entries.map(
+              (entry) {
+                final driverName = entry.key;
+                final trips = entry.value;
+
+                return ExpansionTile(
+                  title: Text(
+                    driverName,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
+                  children: trips.map((trip) {
+                    return ListTile(
+                      title: Text(
+                        'Trip: ${formatDateTime(trip['startTime'])} - ${formatDateTime(trip['endTime'])}',
+                      ),
+                      trailing: Icon(Icons.map),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TripMapPage(tripData: trip['tripData']),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
                 );
-              }).toList(),
-            );
+              },
+            ).toList());
           }
         },
       ),
