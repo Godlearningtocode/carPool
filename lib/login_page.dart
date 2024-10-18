@@ -1,4 +1,4 @@
-import 'package:car_pool/admin_home_page.dart';
+import 'package:car_pool/views/admin_home_page.dart';
 import 'package:car_pool/handle_user_info.dart';
 import 'package:car_pool/providers/my_app_state.dart';
 import 'package:car_pool/views/home_page.dart';
