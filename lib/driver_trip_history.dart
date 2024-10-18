@@ -1,7 +1,6 @@
-import 'package:car_pool/my_app_state.dart';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:car_pool/trip_map_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';

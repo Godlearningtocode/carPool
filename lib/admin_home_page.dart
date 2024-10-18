@@ -1,10 +1,10 @@
 import 'package:car_pool/booking.dart';
 import 'package:car_pool/driver_home_page.dart';
 import 'package:car_pool/driver_trip_history.dart';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:car_pool/vehicle_management_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'my_app_state.dart';
 import 'vehicle_manager.dart';
 
 class AdminHomePage extends StatefulWidget {
@@ -30,7 +30,7 @@ class _adminHomePageState extends State<AdminHomePage> {
   Future<void> _promoteRoDriver(String email, String idToken) async {
     var appState = Provider.of<MyAppState>(context, listen: false);
     try {
-      await appState.updateUserRoleToDriver(email, idToken);
+      await appState.updateUserRole(email, idToken);
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$email has been promoted to driver')));
     } catch (e) {
@@ -42,7 +42,7 @@ class _adminHomePageState extends State<AdminHomePage> {
   Future<void> _promoteToAdmin(String email, String idToken) async {
     var appState = Provider.of<MyAppState>(context, listen: false);
     try {
-      await appState.updateUserRoleToAdmin(email, idToken);
+      await appState.updateUserRole(email, idToken);
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('$email has been promoted to admin')));
     } catch (e) {

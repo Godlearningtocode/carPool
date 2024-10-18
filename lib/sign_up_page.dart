@@ -1,9 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:car_pool/driver_home_page.dart';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'my_app_state.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -60,24 +59,12 @@ class _SignUpPageState extends State<SignUpPage> {
         _selectedRole,
       );
 
-      print('signin in user 58 signuppage');
-      await appState.signIn(
-          _emailController.text.trim(), _passwordController.text);
-
-      if (!mounted) return;
-
-      print('signed in user 64 signuppage');
-      // Show a success message
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Sign-Up successful!')));
-
-      // Navigate to the home page after successful sign-up and sign-in
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (context) =>
-                appState.role == 'driver' ? DriverHomePage() : MyHomePage()),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Account created successfully! Please sign in.')),
       );
+
+      Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       // Update the error message in the UI
       setState(() {

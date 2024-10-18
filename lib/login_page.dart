@@ -1,8 +1,9 @@
 import 'package:car_pool/admin_home_page.dart';
 import 'package:car_pool/handle_user_info.dart';
+import 'package:car_pool/providers/my_app_state.dart';
+import 'package:car_pool/views/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'my_app_state.dart';
 import 'sign_up_page.dart';
 import 'driver_home_page.dart'; // Import driver home page
 
@@ -39,10 +40,11 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       try {
         print('entering signin 41 loginPage');
-        await appState.signIn(_emailController.text.trim(), _passwordController.text);
+        await appState.signIn(
+            _emailController.text.trim(), _passwordController.text);
         print('signin completed 43 loginPage');
 
-        if(appState.idToken == null) {
+        if (appState.idToken == null) {
           throw Exception('ID token is null after sign in 46 loginPage');
         }
 
@@ -55,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
         String userRole = userInfo['role'];
         print(userRole);
         if (userRole == _selectedRole) {
-          appState.updateUserRole(userRole);
+          appState.updateUserRole(userId, userRole);
 
           appState.initializeVehicle([_emailController.text.trim()]);
 

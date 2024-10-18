@@ -1,11 +1,12 @@
 import 'package:car_pool/admin_home_page.dart';
 import 'package:car_pool/driver_home_page.dart';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:car_pool/sign_up_page.dart';
+import 'package:car_pool/views/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'my_app_state.dart';
 import 'login_page.dart';
 
 // Main method to initialize Firebase and start the app

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:car_pool/my_app_state.dart';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -216,7 +216,8 @@ class _DriverHomepageState extends State<DriverHomePage> {
               ElevatedButton(
                   onPressed: () async {
                     String driverName = appState.driverName ?? 'unknwon driver';
-                    print('219 driver home page $driverName ${appState.driverName}');
+                    print(
+                        '219 driver home page $driverName ${appState.driverName}');
                     await _startTrip(driverName);
                   },
                   child: Text('Start Trip')),

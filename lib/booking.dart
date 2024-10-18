@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'my_app_state.dart';
 import 'package:http/http.dart' as http;
 import 'location_page.dart';
 
@@ -184,7 +184,7 @@ class RideBookingPageState extends State<RideBookingPage> {
   Widget build(BuildContext context) {
     var appState = Provider.of<MyAppState>(context);
 
-    String userFullName = '${appState.firstName} ${appState.lastName}';
+    String userFullName = '${appState.userFullName}';
 
     return Scaffold(
         appBar: AppBar(
