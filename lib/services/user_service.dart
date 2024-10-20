@@ -83,6 +83,8 @@ class UserService {
       },
     });
 
+    print(body);
+
     try {
       final response =
           await http.post(Uri.parse(url), headers: headers, body: body);
@@ -114,13 +116,25 @@ class UserService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final email = data['fields']?['email']?['stringValue'] ?? '';
+        final firstName = data['fields']?['firstName']?['stringValue'] ?? '';
+        final lastName = data['fields']?['lastName']?['stringValue'] ?? '';
+        final phoneNumber =
+            data['fields']?['phoneNumber']?['stringValue'] ?? '';
+        final address = data['fields']?['address']?['stringValue'] ?? '';
+        final role = data['fields']?['role']?['stringValue'] ?? 'user';
+
+        // If role is driver, combine firstName and lastName without spaces
+        final driverName = (role == 'driver') ? '$firstName$lastName' : '';
+
         return {
-          'email': data['fields']?['email']?['stringValue'] ?? '',
-          'firstName': data['fields']?['firstName']?['stringValue'] ?? '',
-          'lastName': data['fields']?['lastName']?['stringValue'] ?? '',
-          'phoneNumber': data['fields']?['phoneNumber']?['stringValue'] ?? '',
-          'address': data['fields']?['address']?['stringValue'] ?? '',
-          'role': data['fields']?['role']?['stringValue'] ?? 'user',
+          'email': email,
+          'firstName': firstName,
+          'lastName': lastName,
+          'phoneNumber': phoneNumber,
+          'address': address,
+          'role': role,
+          'driverName': driverName,
         };
       } else {
         throw Exception('Failed to fetch user info: ${response.body}');

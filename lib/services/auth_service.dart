@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:car_pool/services/user_service.dart';
 
 class AuthService {
   static const String apiKey = 'AIzaSyC3gOJDyIviVzsjmfqOR66CzIjiVn8U2z8';
@@ -39,9 +40,22 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to sign up: ${response.body}');
-    }
+    // Parse the response from Firebase Authentication
+    final jsonResponse = jsonDecode(response.body);
+    String idToken = jsonResponse['idToken'];
+    String userId = jsonResponse['localId'];
+
+    // Fetch user information from Firestore
+    final userInfo = await UserService.fetchUserInfo(idToken: idToken, userId: userId);
+
+    // Return the combined response with user details
+    return {
+      'idToken': idToken,
+      'userId': userId,
+      ...userInfo,  // Include user information (like firstName, lastName, role, etc.)
+    };
+  } else {
+    throw Exception('Failed to sign in: ${response.body}');
+  }
   }
 }

@@ -44,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
         final userRole = userInfo['role'];
 
         if (userRole == _selectedRole) {
-          appState.updateUserRole(userId, userRole);
           appState.initializeVehicle([userId]);
           _navigateBasedOnRole(userRole);
         } else {

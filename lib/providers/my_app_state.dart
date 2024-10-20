@@ -110,7 +110,7 @@ class MyAppState extends ChangeNotifier {
       _role = userInfo['role'];
 
       if (_role == 'driver') {
-        _driverName = '${userInfo['firstName']} ${userInfo['lastName']}';
+        _driverName = '${userInfo['firstName']}${userInfo['lastName']}';
       }
 
       _userFullName = '${userInfo['firstName']} ${userInfo['lastName']}';

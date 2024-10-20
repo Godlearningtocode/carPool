@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:car_pool/utils/date_time_util.dart'; // Date-time utility
 
+
 class TripService {
   static const String _baseUrl =
-      'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip';
+      'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip/trips';
 
   // Fetches trip history for all drivers
   static Future<Map<String, List<Map<String, dynamic>>>> fetchTripHistory(
@@ -87,8 +88,8 @@ class TripService {
     required String tripId,
     required List<Map<String, dynamic>> tripData,
   }) async {
-    final url =
-        '$_baseUrl/$driverName/trips?documentId=$tripId';
+    print(tripId);
+    final url = '$_baseUrl/$driverName';
 
     final headers = {
       'Authorization': 'Bearer $idToken',
@@ -97,6 +98,7 @@ class TripService {
 
     final body = jsonEncode({
       'fields': {
+        'tripId': {'srtingValue': tripId},
         'driver': {'stringValue': driverName},
         'tripData': {
           'arrayValue': {
@@ -107,8 +109,9 @@ class TripService {
                     'latitude': {'doubleValue': tripPoint['latitude']},
                     'longitude': {'doubleValue': tripPoint['longitude']},
                     'timeStamp': {
-                      'timestampValue': DateTimeUtil.convertToFirestoreTimestamp(
-                          tripPoint['timeStamp']),
+                      'timestampValue':
+                          DateTimeUtil.convertToFirestoreTimestamp(
+                              tripPoint['timeStamp']),
                     },
                   }
                 }
@@ -139,53 +142,54 @@ class TripService {
     }
   }
 
+
   // Method to update the trip location during the active trip
-  static Future<void> updateTripLocation({
-    required String idToken,
-    required String driverName,
-    required String tripId,
-    required Map<String, dynamic> lastTripPoint,
-  }) async {
-    final url =
-        '$_baseUrl/$driverName/trips/$tripId';
+  // static Future<void> updateTripLocation({
+  //   required String idToken,
+  //   required String driverName,
+  //   required String tripId,
+  //   required Map<String, dynamic> lastTripPoint,
+  // }) async {
+  //   final url =
+  //       '$_baseUrl/$driverName/trips/$tripId';
 
-    final headers = {
-      'Authorization': 'Bearer $idToken',
-      'Content-Type': 'application/json',
-    };
+  //   final headers = {
+  //     'Authorization': 'Bearer $idToken',
+  //     'Content-Type': 'application/json',
+  //   };
 
-    final body = jsonEncode({
-      'fields': {
-        'tripData': {
-          'arrayValue': {
-            'values': [
-              {
-                'mapValue': {
-                  'fields': {
-                    'latitude': {'doubleValue': lastTripPoint['latitude']},
-                    'longitude': {'doubleValue': lastTripPoint['longitude']},
-                    'timeStamp': {
-                      'timestampValue': DateTimeUtil.convertToFirestoreTimestamp(
-                          lastTripPoint['timeStamp'])
-                    },
-                  }
-                }
-              }
-            ]
-          }
-        }
-      }
-    });
+  //   final body = jsonEncode({
+  //     'fields': {
+  //       'tripData': {
+  //         'arrayValue': {
+  //           'values': [
+  //             {
+  //               'mapValue': {
+  //                 'fields': {
+  //                   'latitude': {'doubleValue': lastTripPoint['latitude']},
+  //                   'longitude': {'doubleValue': lastTripPoint['longitude']},
+  //                   'timeStamp': {
+  //                     'timestampValue': DateTimeUtil.convertToFirestoreTimestamp(
+  //                         lastTripPoint['timeStamp'])
+  //                   },
+  //                 }
+  //               }
+  //             }
+  //           ]
+  //         }
+  //       }
+  //     }
+  //   });
 
-    try {
-      final response =
-          await http.patch(Uri.parse(url), headers: headers, body: body);
+  //   try {
+  //     final response =
+  //         await http.patch(Uri.parse(url), headers: headers, body: body);
 
-      if (response.statusCode != 200) {
-        throw Exception('Error updating trip location: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error updating trip location: $e');
-    }
-  }
+  //     if (response.statusCode != 200) {
+  //       throw Exception('Error updating trip location: ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('Error updating trip location: $e');
+  //   }
+  // }
 }
