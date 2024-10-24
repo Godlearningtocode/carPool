@@ -20,6 +20,7 @@ class MyAppState extends ChangeNotifier {
   String? _userRole;
   // ignore: unused_field
   String? _refreshToken;
+  String? _localId;
   bool _isAdmin = false;
 
   User? _user;
@@ -29,11 +30,18 @@ class MyAppState extends ChangeNotifier {
   String? get role => _role;
   String? get driverName => _driverName;
   String? get userFullName => _userFullName;
+  String? get localId => _localId;
   bool get isLoggedIn => _user != null;
   bool get isAdmin => _isAdmin;
   String? get userRole => _userRole;
 
   List<Vehicle> vehicles = [];
+
+  void setLocalId(String id) {
+    _localId = id;
+    print('$_localId 42 myappstate');
+    notifyListeners();
+  }
 
   // Sign-up method using REST API without immediate sign-in
   Future<void> signUp(String email, String password, String firstName,

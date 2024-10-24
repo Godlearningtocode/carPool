@@ -60,11 +60,12 @@ class _DriverHomepageState extends State<DriverHomePage> {
     print(driverName);
 
     String tripId = generateUniqueTripId('AyusshAgarwwal');
+    print('${MyAppState().localId} 63 driverhomepage');
 
     if (_tripId != null) {
       await TripService.saveTripData(
-        idToken: idToken!,
         driverName: driverName,
+        driverId: MyAppState().localId!,
         tripId: tripId,
         tripData: getMockTripData(),
       );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:car_pool/providers/my_app_state.dart';
 import 'package:http/http.dart' as http;
 import 'package:car_pool/services/user_service.dart';
 
@@ -20,7 +21,17 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final jsonResponse = jsonDecode(response.body);
+
+      // Retrieve the Firebase UID (localId)
+      String localId = jsonResponse['localId'];
+
+      print(localId);
+
+      // Save the localId (UID) to your app state or a global variable
+      MyAppState().setLocalId(localId);
+
+      return jsonResponse;
     } else {
       throw Exception('Failed to sign in: ${response.body}');
     }
@@ -40,22 +51,23 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-    // Parse the response from Firebase Authentication
-    final jsonResponse = jsonDecode(response.body);
-    String idToken = jsonResponse['idToken'];
-    String userId = jsonResponse['localId'];
+      // Parse the response from Firebase Authentication
+      final jsonResponse = jsonDecode(response.body);
+      String idToken = jsonResponse['idToken'];
+      String userId = jsonResponse['localId'];
 
-    // Fetch user information from Firestore
-    final userInfo = await UserService.fetchUserInfo(idToken: idToken, userId: userId);
+      // Fetch user information from Firestore
+      final userInfo =
+          await UserService.fetchUserInfo(idToken: idToken, userId: userId);
 
-    // Return the combined response with user details
-    return {
-      'idToken': idToken,
-      'userId': userId,
-      ...userInfo,  // Include user information (like firstName, lastName, role, etc.)
-    };
-  } else {
-    throw Exception('Failed to sign in: ${response.body}');
-  }
+      // Return the combined response with user details
+      return {
+        'idToken': idToken,
+        'userId': userId,
+        ...userInfo, // Include user information (like firstName, lastName, role, etc.)
+      };
+    } else {
+      throw Exception('Failed to sign in: ${response.body}');
+    }
   }
 }

@@ -34,11 +34,12 @@ class UserService {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         String idToken = jsonResponse['idToken'];
+        String localId = jsonResponse['localId'];
 
         // Upload additional user information to Firestore
         await uploadUserInfo(
           idToken: idToken,
-          userId: email,
+          userId: localId,
           email: email,
           firstName: firstName,
           lastName: lastName,
@@ -46,6 +47,27 @@ class UserService {
           address: address,
           role: role,
         );
+
+        if (role == 'driver') {
+          final driverResponse = await http.post(
+            Uri.parse('http://192.168.1.2:3000/api/create-driver'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization':
+                  'Bearer $idToken', // Optional: Send token for authorization
+            },
+            body: jsonEncode({
+              'driverName': '$firstName $lastName',
+              'driverId': localId, // Use Firebase UID as driverId
+            }),
+          );
+
+          if (driverResponse.statusCode == 200) {
+            print('Driver document created successfully in MongoDB.');
+          } else {
+            print('Failed to create driver document: ${driverResponse.body}');
+          }
+        }
       } else {
         throw Exception('Failed to sign up: ${response.body}');
       }
@@ -83,8 +105,6 @@ class UserService {
       },
     });
 
-    print(body);
-
     try {
       final response =
           await http.post(Uri.parse(url), headers: headers, body: body);
@@ -96,6 +116,73 @@ class UserService {
       }
     } catch (e) {
       throw Exception('Error uploading user info: $e');
+    }
+  }
+
+  Future<void> createDriverDocument(
+      {required String idToken,
+      required String driverName,
+      required String uid}) async {
+    final url =
+        'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip/$driverName';
+
+    final headers = {
+      'Authorization': 'Bearer $idToken',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      'fields': {
+        'driverId': {'stringValue': uid},
+        'driverName': {'stringValue': driverName},
+      }
+    });
+
+    try {
+      final response =
+          await http.post(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to create driver document: ${response.body}');
+      } else {
+        print('Driver document created successfully.');
+      }
+    } catch (e) {
+      throw Exception('Error creating driver document: $e');
+    }
+  }
+
+  Future<void> createDriverTripsSubCollection(
+      {required String idToken,
+      required String driverName,
+      required String uid}) async {
+    final url =
+        'https://firestore.googleapis.com/v1/projects/car-pool-786eb/databases/(default)/documents/DriverTrip/$driverName/trips/$uid';
+
+    final headers = {
+      'Authorization': 'Bearer $idToken',
+      'Content-Type': 'application/json',
+    };
+
+    final body = jsonEncode({
+      'fields': {
+        'driverId': {'stringValue': uid},
+        'driverName': {'stringValue': driverName},
+      }
+    });
+
+    try {
+      final response =
+          await http.post(Uri.parse(url), headers: headers, body: body);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'failed to create driver trips subcollection: ${response.body}');
+      } else {
+        print('Driver trips subcolelction crwated succesfully');
+      }
+    } catch (e) {
+      throw Exception('Error creating trips subcolelction: $e');
     }
   }
 

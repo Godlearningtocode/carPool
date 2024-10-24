@@ -3,6 +3,11 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:background_locator_2/background_locator.dart';
+import 'package:background_locator_2/location_dto.dart';
+import 'package:background_locator_2/settings/locator_settings.dart' as BackgroundLocatorSettings;
+import 'package:background_locator_2/settings/android_settings.dart' as BackgroundLocatorAndroidSettings;
+import 'package:background_locator_2/settings/ios_settings.dart' as BackgroundLocatorIosSettings;
 
 class LocationService {
   final String _googleApiKey = 'YOUR_GOOGLE_API_KEY';
@@ -155,4 +160,39 @@ class LocationService {
   static void stopLocationTracking() {
     _positionSubscription?.cancel();
   }
+
+  Future<void> initalizeBackgroundLocator() async {
+    await BackgroundLocator.initialize();
+    print('Background Locator initalized');
+  }
+
+  static void startBackgroundTracking() {
+    BackgroundLocator.registerLocationUpdate(
+      locationCallback,
+       androidSettings: BackgroundLocatorAndroidSettings.AndroidSettings(
+        accuracy: BackgroundLocatorSettings.LocationAccuracy.NAVIGATION,
+        interval: 5, // Location updates every 5 seconds
+        distanceFilter: 0,
+        androidNotificationSettings: BackgroundLocatorAndroidSettings.AndroidNotificationSettings(
+          notificationTitle: "Background Location Service",
+          notificationMsg: "Location tracking is active",
+          notificationIcon: "@mipmap/ic_launcher", // Change this to your notification icon
+        ),
+      ),
+      iosSettings: BackgroundLocatorIosSettings.IOSSettings(
+        accuracy: BackgroundLocatorSettings.LocationAccuracy.NAVIGATION,
+        distanceFilter: 0,
+      ),
+    );
+  }
+
+  static void stopBackgroundTracking() {
+    BackgroundLocator.unRegisterLocationUpdate();
+    print("background tracking stopped");
+  }
+}
+
+void locationCallback(LocationDto locationDto) {
+  print(
+      'background location update: ${locationDto.latitude}, ${locationDto.longitude}');
 }
