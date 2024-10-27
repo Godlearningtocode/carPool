@@ -1,19 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:car_pool/handlers/location_task_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:background_locator_2/background_locator.dart';
-import 'package:background_locator_2/location_dto.dart';
-import 'package:background_locator_2/settings/locator_settings.dart' as BackgroundLocatorSettings;
-import 'package:background_locator_2/settings/android_settings.dart' as BackgroundLocatorAndroidSettings;
-import 'package:background_locator_2/settings/ios_settings.dart' as BackgroundLocatorIosSettings;
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class LocationService {
   final String _googleApiKey = 'YOUR_GOOGLE_API_KEY';
   static StreamSubscription<Position>? _positionSubscription;
 
-  // Method to get the current location of the user
   Future<Position> getCurrentLocation() async {
     LocationSettings locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.best,
@@ -161,38 +157,35 @@ class LocationService {
     _positionSubscription?.cancel();
   }
 
-  Future<void> initalizeBackgroundLocator() async {
-    await BackgroundLocator.initialize();
-    print('Background Locator initalized');
+  // Background location tracking using geolocator
+  static Future<void> startBackgroundTracking({
+    required Function(Position) onPositionUpdate,
+  }) async {
+    LocationSettings locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 0,
+    );
+
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen((Position position) {
+      onPositionUpdate(position);
+    });
   }
 
-  static void startBackgroundTracking() {
-    BackgroundLocator.registerLocationUpdate(
-      locationCallback,
-       androidSettings: BackgroundLocatorAndroidSettings.AndroidSettings(
-        accuracy: BackgroundLocatorSettings.LocationAccuracy.NAVIGATION,
-        interval: 5, // Location updates every 5 seconds
-        distanceFilter: 0,
-        androidNotificationSettings: BackgroundLocatorAndroidSettings.AndroidNotificationSettings(
-          notificationTitle: "Background Location Service",
-          notificationMsg: "Location tracking is active",
-          notificationIcon: "@mipmap/ic_launcher", // Change this to your notification icon
-        ),
-      ),
-      iosSettings: BackgroundLocatorIosSettings.IOSSettings(
-        accuracy: BackgroundLocatorSettings.LocationAccuracy.NAVIGATION,
-        distanceFilter: 0,
-      ),
+  static Future<void> startForegroundService() async {
+    await FlutterForegroundTask.startService(
+      notificationTitle: 'Background Location Service',
+      notificationText: 'Tracking your location',
+      callback: locationCallback,
     );
   }
 
-  static void stopBackgroundTracking() {
-    BackgroundLocator.unRegisterLocationUpdate();
-    print("background tracking stopped");
+  static Future<void> stopForegroundService() async {
+    await FlutterForegroundTask.stopService();
   }
-}
 
-void locationCallback(LocationDto locationDto) {
-  print(
-      'background location update: ${locationDto.latitude}, ${locationDto.longitude}');
+  static void locationCallback() {
+    FlutterForegroundTask.setTaskHandler(LocationTaskHandler());
+  }
 }

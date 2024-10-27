@@ -6,6 +6,7 @@ import 'package:car_pool/views/login_page.dart';
 import 'package:car_pool/views/sign_up_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
@@ -15,6 +16,28 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'car_pooling_service',
+      channelName: 'Car Pooling Service',
+      channelDescription: 'Tracking your trips in the background',
+      channelImportance: NotificationChannelImportance.HIGH,
+      priority: NotificationPriority.HIGH,
+    ),
+    iosNotificationOptions: const IOSNotificationOptions(
+      showNotification: true,
+      playSound: false,
+    ),
+    foregroundTaskOptions: ForegroundTaskOptions(
+      eventAction: ForegroundTaskEventAction.repeat(5000),
+      autoRunOnBoot: false,
+      autoRunOnMyPackageReplaced: false,
+      allowWakeLock: true,
+      allowWifiLock: true,
+    ),
+  );
+
   runApp(MyApp());
 }
 

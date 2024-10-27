@@ -1,8 +1,12 @@
+import 'package:car_pool/services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:mongo_dart/mongo_dart.dart';
 
 class TripService {
   static Db? db;
   static DbCollection? driverTripCollection;
+  static String? _currentDriverId;
+  static String? _currentTripId;
 
   static Future<void> initialize() async {
     if (db == null || !db!.isConnected) {
@@ -17,6 +21,115 @@ class TripService {
         print("Error connecting to MongoDB: $e");
         rethrow; // Rethrow the error if needed
       }
+    }
+  }
+
+  static Future<void> startTrip(
+      {required String driverName,
+      required String driverId,
+      required String tripId}) async {
+    _currentDriverId = driverId;
+    _currentTripId = tripId;
+
+    await initialize();
+
+    await saveTripData(
+        driverName: driverName,
+        driverId: driverId,
+        tripId: tripId,
+        tripData: []);
+
+    await LocationService.startForegroundService();
+  }
+
+  static Future<void> stopTrip() async {
+    await LocationService.stopForegroundService();
+
+    if (_currentDriverId != null && _currentTripId != null) {
+      await updateTripEndTime(
+        driverId: _currentDriverId!,
+        tripId: _currentTripId!,
+      );
+
+      _currentDriverId = null;
+      _currentTripId = null;
+    }
+  }
+
+  static Future<void> updateTripEndTime({
+    required String driverId,
+    required String tripId,
+  }) async {
+    try {
+      await initialize();
+
+      if (driverTripCollection == null) {
+        throw Exception("Trips collection is not initialized.");
+      }
+
+      await driverTripCollection!.updateOne(
+        where.eq('driverId', driverId),
+        modify.set('trips.\$[elem].endTime', DateTime.now().toIso8601String()),
+        arrayFilters: [where.eq('elem.tripId', tripId)],
+      );
+
+      print("Trip end time updated successfully for trip: $tripId");
+    } catch (e) {
+      print('Error updating trip end time: $e');
+      throw Exception('Error updating trip end time: $e');
+    }
+  }
+
+  static Future<void> handleLocationUpdate(Position position) async {
+    if (_currentDriverId == null || _currentTripId == null) {
+      print("No active trip to record location.");
+      return;
+    }
+
+    try {
+      await initialize();
+
+      if (driverTripCollection == null) {
+        throw Exception("Trips collection is not initialized.");
+      }
+
+      var driverDoc = await driverTripCollection!
+          .findOne(where.eq('driverId', _currentDriverId!));
+
+      if (driverDoc == null) {
+        throw Exception('Driver with id $_currentDriverId not found.');
+      }
+
+      var trips = driverDoc['trips'] as List;
+      var tripIndex =
+          trips.indexWhere((trip) => trip['tripId'] == _currentTripId!);
+
+      if (tripIndex == -1) {
+        throw Exception(
+            'Trip with id $_currentTripId not found for driver $_currentDriverId');
+      }
+
+      // Append the new location point
+      await driverTripCollection!.updateOne(
+        where
+            .eq('driverId', _currentDriverId!)
+            .eq('trips.tripId', _currentTripId!),
+        modify.push(
+          'trips.\$[trip].tripData',
+          {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+            'timeStamp': DateTime.now().toIso8601String(),
+          },
+        ),
+        arrayFilters: [where.eq('trip.tripId', _currentTripId!)],
+      );
+
+      print(
+          'Location updated successfully for trip $_currentTripId: (${position.latitude}, ${position.longitude})');
+    } catch (e) {
+      print('Error handling location update: $e');
+      // Optionally, handle the error (e.g., retry logic, notify the user)
     }
   }
 

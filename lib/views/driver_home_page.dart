@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:car_pool/mock_trip_data.dart';
 import 'package:car_pool/providers/my_app_state.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:provider/provider.dart';
-import 'package:car_pool/services/location_service.dart';
 import 'package:car_pool/services/trip_service.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -22,27 +21,30 @@ class _DriverHomepageState extends State<DriverHomePage> {
   @override
   void initState() {
     super.initState();
+    _checkServiceStatus();
+  }
+
+  Future<void> _checkServiceStatus() async {
+    bool isRunning = await FlutterForegroundTask.isRunningService;
+    setState(() {
+      _isTripActive = isRunning;
+    });
   }
 
   Future<void> _startTrip(String driverName) async {
-    setState(() {
-      _isTripActive = true;
-    });
+    var appState = Provider.of<MyAppState>(context, listen: false);
+    String driverId = appState.localId ?? 'unknown_id';
 
     _tripId = DateTime.now().millisecondsSinceEpoch.toString();
 
-    await LocationService.startLocationTracking(
-        onPositionUpdate: (Position position) {
-      if (_isTripActive) {
-        _tripData.add({
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-          'timeStamp': DateTime.now().toIso8601String(),
-        });
+    await TripService.startTrip(
+      driverName: driverName,
+      driverId: driverId,
+      tripId: _tripId!,
+    );
 
-        // Update Firestore with the new position
-        // _updateTripLocation(driverName);
-      }
+    setState(() {
+      _isTripActive = true;
     });
   }
 
@@ -52,12 +54,11 @@ class _DriverHomepageState extends State<DriverHomePage> {
     return '$timestamp-${passengerName.isNotEmpty ? passengerName : uuid.v4()}';
   }
 
-  Future<void> _endTrip(String? idToken, String driverName) async {
-    setState(() {
-      _isTripActive = false;
-    });
+  Future<void> _endTrip(String driverName) async {
+    var appState = Provider.of<MyAppState>(context, listen: false);
+    String driverId = appState.localId ?? 'unknown_id';
 
-    print(driverName);
+    await TripService.stopTrip();
 
     String tripId = generateUniqueTripId('AyusshAgarwwal');
     print('${MyAppState().localId} 63 driverhomepage');
@@ -65,14 +66,16 @@ class _DriverHomepageState extends State<DriverHomePage> {
     if (_tripId != null) {
       await TripService.saveTripData(
         driverName: driverName,
-        driverId: MyAppState().localId!,
+        driverId: driverId,
         tripId: tripId,
         tripData: getMockTripData(),
       );
     }
 
     _tripData.clear();
-    LocationService.stopLocationTracking();
+    setState(() {
+      _isTripActive = false;
+    });
   }
 
   // Future<void> _updateTripLocation(String driverName) async {
@@ -114,18 +117,29 @@ class _DriverHomepageState extends State<DriverHomePage> {
           children: [
             if (!_isTripActive)
               ElevatedButton(
-                  onPressed: () async {
-                    String driverName = appState.driverName ?? 'unknown driver';
-                    print('driverhomepage 118 $driverName');
-                    await _startTrip(driverName);
-                  },
-                  child: Text('Start Trip')),
+                onPressed: () async {
+                  String driverName = appState.driverName ?? 'unknown driver';
+                  print('driverhomepage 118 $driverName');
+                  await _startTrip(driverName);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: TextStyle(fontSize: 20),
+                ),
+                child: Text('Start Trip'),
+              ),
             if (_isTripActive)
               ElevatedButton(
                 onPressed: () async {
                   String driverName = appState.driverName ?? 'unknown driver';
-                  await _endTrip(appState.idToken, driverName);
+                  await _endTrip(driverName);
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: TextStyle(fontSize: 20),
+                ),
                 child: Text('End Trip'),
               ),
             SizedBox(height: 20),
