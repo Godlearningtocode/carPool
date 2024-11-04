@@ -37,7 +37,7 @@ class UserService {
         String localId = jsonResponse['localId'];
 
         // Upload additional user information to Firestore
-        await uploadUserInfo(
+        await uploadUserInfoToMongoDB(
           idToken: idToken,
           userId: localId,
           email: email,
@@ -76,8 +76,7 @@ class UserService {
     }
   }
 
-  /// Uploads user information to Firestore.
-  static Future<void> uploadUserInfo({
+  Future<void> uploadUserInfoToMongoDB({
     required String idToken,
     required String userId,
     required String email,
@@ -87,32 +86,36 @@ class UserService {
     required String address,
     required String role,
   }) async {
-    final url = '$_baseUrl?documentId=$userId';
+    final String url =
+        'http://192.168.1.2:3000/api/users'; // Update with your backend API endpoint
 
     final headers = {
-      'Authorization': 'Bearer $idToken',
+      'Authorization': 'Bearer $idToken', // If your backend requires auth
       'Content-Type': 'application/json',
     };
 
     final body = jsonEncode({
-      'fields': {
-        'email': {'stringValue': email},
-        'firstName': {'stringValue': firstName},
-        'lastName': {'stringValue': lastName},
-        'phoneNumber': {'stringValue': phoneNumber},
-        'address': {'stringValue': address},
-        'role': {'stringValue': role},
-      },
+      'userId': userId,
+      'email': email,
+      'firstName': firstName,
+      'lastName': lastName,
+      'phoneNumber': phoneNumber,
+      'address': address,
+      'role': role,
     });
 
     try {
-      final response =
-          await http.post(Uri.parse(url), headers: headers, body: body);
+      final response = await http.post(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to upload user info: ${response.body}');
+      if (response.statusCode == 201) {
+        // Assuming 201 Created
+        print('User info uploaded successfully to MongoDB.');
       } else {
-        print('User info uploaded successfully.');
+        throw Exception('Failed to upload user info: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error uploading user info: $e');
@@ -187,42 +190,29 @@ class UserService {
   }
 
   /// Fetches user information from Firestore.
-  static Future<Map<String, dynamic>> fetchUserInfo({
+  Future<Map<String, dynamic>> fetchUserInfoFromMongoDB({
     required String idToken,
     required String userId,
   }) async {
-    final url = '$_baseUrl/$userId';
+    final String url =
+        'http://192.168.1.2:3000/api/users/$userId'; // Update with your backend API endpoint
 
     final headers = {
-      'Authorization': 'Bearer $idToken',
+      'Authorization': 'Bearer $idToken', // If your backend requires auth
       'Content-Type': 'application/json',
     };
 
     try {
-      final response = await http.get(Uri.parse(url), headers: headers);
+      final response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final email = data['fields']?['email']?['stringValue'] ?? '';
-        final firstName = data['fields']?['firstName']?['stringValue'] ?? '';
-        final lastName = data['fields']?['lastName']?['stringValue'] ?? '';
-        final phoneNumber =
-            data['fields']?['phoneNumber']?['stringValue'] ?? '';
-        final address = data['fields']?['address']?['stringValue'] ?? '';
-        final role = data['fields']?['role']?['stringValue'] ?? 'user';
-
-        // If role is driver, combine firstName and lastName without spaces
-        final driverName = (role == 'driver') ? '$firstName$lastName' : '';
-
-        return {
-          'email': email,
-          'firstName': firstName,
-          'lastName': lastName,
-          'phoneNumber': phoneNumber,
-          'address': address,
-          'role': role,
-          'driverName': driverName,
-        };
+        return data; // Assuming your backend returns a JSON object with user info
+      } else if (response.statusCode == 404) {
+        throw Exception('User not found.');
       } else {
         throw Exception('Failed to fetch user info: ${response.body}');
       }
@@ -231,30 +221,35 @@ class UserService {
     }
   }
 
-  /// Updates user role in Firestore.
-  static Future<void> updateUserRole({
-    required String email,
+  /// Updates user role in MongoDB via backend API.
+  Future<void> updateUserRoleInMongoDB({
     required String idToken,
+    required String userId,
     required String role,
   }) async {
-    final String url = '$_baseUrl/$email';
+    final String url =
+        'http://192.168.1.2:3000/api/users/$userId'; // Update with your backend API endpoint
 
     final headers = {
-      'Authorization': 'Bearer $idToken',
+      'Authorization': 'Bearer $idToken', // If your backend requires auth
       'Content-Type': 'application/json',
     };
 
     final body = jsonEncode({
-      'fields': {
-        'role': {'stringValue': role}
-      }
+      'role': role,
     });
 
     try {
-      final response =
-          await http.patch(Uri.parse(url), headers: headers, body: body);
+      final response = await http.patch(
+        Uri.parse(url),
+        headers: headers,
+        body: body,
+      );
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        // Assuming 200 OK for successful update
+        print('User role updated successfully in MongoDB.');
+      } else {
         throw Exception('Failed to update role: ${response.body}');
       }
     } catch (e) {

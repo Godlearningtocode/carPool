@@ -13,6 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final userService = UserService();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -40,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
         final idToken = appState.idToken!;
         final userId = _emailController.text.trim();
 
-        Map<String, dynamic> userInfo = await UserService.fetchUserInfo(idToken: idToken, userId: userId);
+        Map<String, dynamic> userInfo = await userService.fetchUserInfoFromMongoDB(idToken: idToken, userId: userId);
         final userRole = userInfo['role'];
 
         if (userRole == _selectedRole) {

@@ -7,6 +7,7 @@ import 'package:car_pool/services/user_service.dart';
 import 'package:http/http.dart' as http;
 
 class MyAppState extends ChangeNotifier {
+  final userService = UserService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthService _authService = AuthService();
   // ignore: unused_field
@@ -39,7 +40,6 @@ class MyAppState extends ChangeNotifier {
 
   void setLocalId(String id) {
     _localId = id;
-    print('$_localId 42 myappstate');
     notifyListeners();
   }
 
@@ -75,7 +75,7 @@ class MyAppState extends ChangeNotifier {
 
         try {
           // Upload user information to the database
-          await UserService.uploadUserInfo(
+          await userService.uploadUserInfoToMongoDB(
               idToken: _idToken!,
               userId: userEmail!,
               email: email,
@@ -113,7 +113,7 @@ class MyAppState extends ChangeNotifier {
       _userEmail = response['email'];
       _idToken = response['idToken'];
 
-      final userInfo = await UserService.fetchUserInfo(
+      final userInfo = await userService.fetchUserInfoFromMongoDB(
           idToken: _idToken!, userId: _userEmail!);
       _role = userInfo['role'];
 
@@ -125,6 +125,7 @@ class MyAppState extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
+      print(e);
       throw Exception('Failed to sign in');
     }
   }
@@ -140,8 +141,8 @@ class MyAppState extends ChangeNotifier {
 
   Future<void> updateUserRole(String email, String role) async {
     try {
-      await UserService.updateUserRole(
-          email: email, idToken: _idToken!, role: role);
+      await userService.updateUserRoleInMongoDB(
+          idToken: _idToken!, userId: _localId!, role: role);
       notifyListeners();
     } catch (e) {
       throw Exception('Failed to update role');

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:car_pool/services/user_service.dart';
 
 class AuthService {
+  final userService = UserService();
   static const String apiKey = 'AIzaSyC3gOJDyIviVzsjmfqOR66CzIjiVn8U2z8';
   final String _authUrl = 'https://identitytoolkit.googleapis.com/v1';
 
@@ -58,7 +59,7 @@ class AuthService {
 
       // Fetch user information from Firestore
       final userInfo =
-          await UserService.fetchUserInfo(idToken: idToken, userId: userId);
+          await userService.fetchUserInfoFromMongoDB(idToken: idToken, userId: userId);
 
       // Return the combined response with user details
       return {
